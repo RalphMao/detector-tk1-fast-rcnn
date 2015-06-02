@@ -100,6 +100,14 @@ level = 0
 columns = defaultdict(list)
 lines=""
 
+#+++++++++++++++++++++++++++ Global Variables ++++++++++++++++++++++++++++++++++++++++++++++++++++
+host_ipaddress = '166.111.65.148'
+host_port = '5000'
+password = 'nics.info'
+score = 100
+username = 'nicsefc'
+temp_directory = '.temp'
+
 
 
 #++++++++++++++++++++++++++++ get_token: Can be used by the participant directly ++++++++++++++++++++
@@ -170,9 +178,9 @@ def get_token (username,password):
 #
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-def get_image(token, image_number):
-	global image_directory
-	global temp_directory
+def get_image(token, image_number, dir_t):
+	image_directory = dir_t
+	temp_directory = '.temp'
 	c = pycurl.Curl()
 	c.setopt(c.URL, host_ipaddress+':'+host_port+'/image')#/?image='+str(image_number))
 	post_data = {'token':token, 'image_name':str(image_number)}
@@ -430,42 +438,4 @@ def parse_cmd_line():
             assert False, "unhandled option"
 
     print "\nhost = "+host_ipaddress+":"+host_port+"\nUsername = "+username+"\nPassword = "+password+"" 
-
-
-#+++++++++++++++++++++++++++ Global Variables ++++++++++++++++++++++++++++++++++++++++++++++++++++
-host_ipaddress = '166.111.65.148'
-host_port = '5000'
-password = 'nics.info'
-score = 100
-username = 'nicsefc'
-csv_filename = 'golden_output.csv'
-image_directory = '../images'
-temp_directory = '../temp'
-
-#+++++++++++++++++++++++++++ Start of the script +++++++++++++++++++++++++++++++++++++++++++++++
-parse_cmd_line()
-[token, status] = get_token(username,password)   # Login to server and obtain token
-if status==0:
-	print "Incorrect Username and Password. Bye!"
-	sys.exit()
-read_csv(csv_filename)                 # Read the csv file to obtain the data
-simulate_score(score)                     # Corrupt the databaseread to obtain a score of 'score'
-[no_of_images, status] = get_no_of_images(token)
-if status==0:
-	print "Token, Incorrect or Expired. Bye!"
-	sys.exit()
-# This is for illustration purpose
-while 1==1:
-	for w in range (1,int(no_of_images)+1,1):
-		if get_image(token,w)==0:             # If get_image failed, exit.
-			print "Get Image Failed, Exiting, Bye!"
-			sys.exit()
-		else:
-			print "Image Stored in client directory "+image_directory+"/"+str(w)+".jpg"
-		line = get_lines(1)
-		if post_result(token,line)==0:        # If post_result failed, exit.
-			print "Get Image Failed, Exiting, Bye!"
-			sys.exit()
-
-		print
 

@@ -9,6 +9,7 @@ import httpapi
 from PIL import Image
 import numpy as np
 import scipy.misc
+import time
 
 # bounding boxes are a list of tuples (xmin, ymin, xmax, ymax)
 def get_regions(image, bboxs):                                                                                                        
@@ -25,20 +26,34 @@ class rcnn_detector(object):
         self.nms = nms.reducer(iou_thres)
         self.output_dim = output_dim
 
+
     def detect(self, image_in):
+        global proposal_time
+        global abc_time
+        global cnn_time
+        global nms_time
+        time1 = time.time()
         bboxs = self.proposer.get_proposals(image_in)
+        time2 = time.time()
+        proposal_time += time2 - time1
         image = Image.open(image_in)
-        image = np.array(Image.open(image_in))
-        if image.ndim == 2: # In case of grayscale images
-            image = np.repeat(np.expand_dims(image, axis=2),3,axis=2)
         regions = get_regions(image,bboxs) / 255
+        if regions.ndim == 3: # In case of grayscale images
+            regions = np.repeat(np.expand_dims(regions,axis=3),3,axis=3)
         probs = np.zeros((regions.shape[0], self.output_dim), dtype = 'float32')
+        time3 = time.time()
+        abc_time += time3 - time2
 
         batch_size = self.Net.max_batch
         for start in range(0, regions.shape[0], batch_size):
             np.copyto(probs[start:start + batch_size], self.Net.forward(regions[start:start + batch_size]))
+        time4 = time.time()
+        cnn_time += time4 - time3
 
-        return self.nms.multi_class_reduce(bboxs, probs[:,1:]) 
+        res = self.nms.multi_class_reduce(bboxs, probs[:,1:]) 
+        time5 = time.time()
+        nms_time += time5 - time4
+        return res
 
 
 
@@ -86,5 +101,17 @@ def test_mAP():
 if __name__ == "__main__":
     model_name = '/home/maohz12/caffe-tk1/model_test/model/smallVGG11_201/VGG_11_Layer_iter_80000.caffemodel'
     prototxt_name = '/home/maohz12/caffe-tk1/model_test/model/smallVGG11_201/VGG_11_Layer_deploy.prototxt'
+    global proposal_time
+    global abc_time
+    global cnn_time
+    global nms_time
+    proposal_time = 0.0
+    abc_time = 0.0
+    cnn_time = 0.0
+    nms_time = 0.0
     test_http()
+    print proposal_time
+    print abc_time
+    print cnn_time
+    print nms_time
 
