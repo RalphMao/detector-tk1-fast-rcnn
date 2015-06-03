@@ -5,7 +5,7 @@ import utils.cython_nms
 import numpy as np
 
 class reducer(object):
-    def __init__(self, iou_thresh = 0.3, confidence_thresh = 0.01,max_boxs = 30):
+    def __init__(self, iou_thresh = 0.3, confidence_thresh = 0.01,max_boxs = 40):
         self.iou_thresh = iou_thresh
         self.max_boxs = max_boxs
         self.confidence_thresh = confidence_thresh
@@ -25,15 +25,23 @@ class reducer(object):
         for cls_ind in range(num_cls):
             cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
             cls_scores = scores[:, cls_ind]
+            keep_c = np.where(cls_scores > self.confidence_thresh)[0]
+            cls_boxes = cls_boxes[keep_c, :]
+            cls_scores = cls_scores[keep_c]
+
             dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])).astype(np.float32)
 
-            keep1 = utils.cython_nms.nms(dets, self.iou_thresh)
-            keep2 = np.where(scores[:, cls_ind] > self.confidence_thresh)
+            keep = utils.cython_nms.nms(dets, self.iou_thresh)
+            '''
+            keep2 = np.where(scores[:, cls_ind] > self.confidence_thresh)[0]
             keep = np.intersect1d(keep1, keep2)
+            '''
+            if len(keep) == 0:
+                continue
 
             class_id += [cls_ind + 1] * len(keep)
-            confidence = np.append(confidence, scores[keep, cls_ind])
-            bboxs_chosen = np.append(bboxs_chosen, boxes[keep,4*cls_ind:4*(cls_ind + 1)])
+            confidence = np.append(confidence, cls_scores[keep])
+            bboxs_chosen = np.append(bboxs_chosen, cls_boxes[keep,:])
 
         bboxs_chosen = np.reshape(bboxs_chosen, (len(bboxs_chosen)/4, 4))
         class_id = np.array(class_id)
