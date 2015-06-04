@@ -12,6 +12,8 @@ class fast_rcnn_net(object):
         self.net = caffe.Net(prototxt_name, model_name, caffe.TEST)
 
     def detect(self, im, obj_proposals):
+        if im == [] or len(obj_proposals) == 0:
+            return ([], [])
         return fast_rcnn.test.im_detect(self.net, im, obj_proposals)
         
 def test():

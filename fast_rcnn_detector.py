@@ -9,6 +9,8 @@ import cnms
 import cv2
 import numpy as np
 import os
+from multiprocessing import Process, Queue
+import time
 
 class fast_rcnn_detector(object):
     def __init__(self, prototxt_name, model_name, batch_size = 1, max_num_proposals = 200, output_dim = 201, iou_thres = 0.3):
@@ -46,11 +48,66 @@ class http_rcnn_detector(fast_rcnn_detector):
             self.carrier.post_result(results[0],results[1],results[2])
         print "All images finished!"
 
+class pipe_detector(object):
+    def __init__(self, prototxt_name, model_name, usrname, passwd, batch_size = 1, max_num_proposals = 200, output_dim = 201, iou_thres = 0.3):
+        self.proposer = region_proposer.proposer(max_num_proposals)
+        self.rcnn_net = fast_rcnn_net.fast_rcnn_net(prototxt_name, model_name, batch_size)
+        self.reducer = cnms.reducer(iou_thres)
+        self.carrier = httpapi.carrier(usrname, passwd)
+        self.queue = Queue(2)
+        
+        self._front_end() # Perform first preprocessing for pipeline
+
+    def run(self):
+        im, obj_proposals = self.queue.get()
+        start_time = time.time()
+        num = 0
+        while im != 'Finished':
+            front_process = Process(self._front_end())
+            front_process.start()
+            self._back_end(im, obj_proposals)
+            im, obj_proposals = self.queue.get()
+            num += 1
+            print "Average speed: %f seconds per image"%((time.time() - start_time) / num)
+        print "All images finished"
+
+    def _back_end(self, im, obj_proposals):
+        if im == [] or obj_proposals == []:
+            results = ([], [], [])
+        else:
+            scores, boxes = self.rcnn_net.detect(im, obj_proposals)
+            print "Produce %d boxes"%len(scores)
+            results = self.reducer.multi_class_reduce(boxes[:,4:], scores[:,1:])
+        self.carrier.post_result(results[0],results[1],results[2])
+
+    def _front_end(self):
+        if not self.carrier.done():
+            image_name = self.carrier.get_image()
+            try:
+                assert os.stat(image_name).st_size < 300 * 1024
+                im = cv2.imread(image_name)
+                assert len(im.shape) == 3
+                assert im.shape[1] < 800
+                assert im.shape[2] < 800
+            except Exception as e:
+                print "Exception:", e
+                self.queue.put(([],[]))
+
+            obj_proposals = self.proposer.get_proposals(image_name, dtype = 'uint16')
+            print "Find %d proposals"%len(obj_proposals)
+            self.queue.put((im, obj_proposals))
+        else:
+            self.queue.put(('Finish',[]))
+
+
+
+        
+
 def http():
     #==========test http detector============
     usrname = 'nicsefc'
     passwd = 'nics.info'
-    detector = http_rcnn_detector(prototxt_name, model_name, batch_size = 10, usrname = usrname, passwd = passwd)
+    detector = pipe_detector(prototxt_name, model_name, batch_size = 10, usrname = usrname, passwd = passwd)
     detector.run()
 def test():
     #===========test mAP===================
@@ -72,8 +129,8 @@ def test():
 
 
 if __name__ == "__main__":
-    model_name = '/home/maohz12/rcnn-python/fast-rcnn-model/ilsvrc_fast_rcnn_ft_iter_40000.caffemodel'  
-    prototxt_name = '/home/maohz12/rcnn-python/fast-rcnn-model/fast_rcnn_test_new.prototxt'
+    model_name = 'fast-rcnn-model/ilsvrc_fast_rcnn_EB_pp_pp_v2_iter_20000.caffemodel'
+    prototxt_name = 'fast-rcnn-model/test.prototxt'
     import time, sys
     if len(sys.argv) > 1:
         rcnn = fast_rcnn_detector(prototxt_name, model_name)
