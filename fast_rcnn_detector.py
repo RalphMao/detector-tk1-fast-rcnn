@@ -147,11 +147,19 @@ def test():
 if __name__ == "__main__":
     model_name = 'fast-rcnn-model/ilsvrc_fast_rcnn_EB_pp_pp_v2_iter_20000.caffemodel'
     prototxt_name = 'fast-rcnn-model/test.prototxt'
+    '''
+    model_name = 'fast-rcnn-model/ilsvrc_fast_rcnn_ft_iter_40000.caffemodel'
+    prototxt_name = 'fast-rcnn-model/fast_rcnn_test_new.prototxt'
+    '''
+
     import time, sys
     if len(sys.argv) > 1:
         rcnn = fast_rcnn_detector(prototxt_name, model_name)
         image_in = sys.argv[1]
         results = rcnn.detect(image_in)
-        print len(results[0])
+        fout = open('res.txt','w')
+        for i in range(len(results[0])):
+            fout.write('%d %d %f %f %f %f %f\n'%(1, results[0][i], results[1][i], results[2][i][0], results[2][i][1], results[2][i][2], results[2][i][3]))
+        fout.close()
     else:
         http()

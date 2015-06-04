@@ -16,8 +16,6 @@ class proposer(object):
 
 if __name__ == "__main__":
     import os
-    import PIL.Image as Image
+    import sys
     pp = proposer(200)
-    print pp.get_proposals('edgeboxes-c/peppers.png')
-    image = np.array(Image.open('edgeboxes-c/peppers.png'))
-    print image.shape
+    print pp.get_proposals(sys.argv[1])
