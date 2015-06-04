@@ -54,22 +54,38 @@ class pipe_detector(object):
         self.rcnn_net = fast_rcnn_net.fast_rcnn_net(prototxt_name, model_name, batch_size)
         self.reducer = cnms.reducer(iou_thres)
         self.carrier = httpapi.carrier(usrname, passwd)
-        self.queue = Queue(2)
-        
-        self._front_end() # Perform first preprocessing for pipeline
+        self.queue = Queue(8)
+
+        # self._front_end() # Perform first preprocessing for pipeline
 
     def run(self):
+        front_process = Process(target=self._front_end, args=(self,))
+        front_process.start()
+        print "Front process started"
         im, obj_proposals = self.queue.get()
         start_time = time.time()
         num = 0
         while im != 'Finished':
-            front_process = Process(self._front_end())
-            front_process.start()
             self._back_end(im, obj_proposals)
             im, obj_proposals = self.queue.get()
             num += 1
             print "Average speed: %f seconds per image"%((time.time() - start_time) / num)
         print "All images finished"
+
+        front_process.join()
+
+
+        # im, obj_proposals = self.queue.get()
+        # start_time = time.time()
+        # num = 0
+        # while im != 'Finished':
+        #     front_process = Process(self._front_end())
+        #     front_process.start()
+        #     self._back_end(im, obj_proposals)
+        #     im, obj_proposals = self.queue.get()
+        #     num += 1
+        #     print "Average speed: %f seconds per image"%((time.time() - start_time) / num)
+        # print "All images finished"
 
     def _back_end(self, im, obj_proposals):
         if im == [] or obj_proposals == []:
@@ -78,10 +94,11 @@ class pipe_detector(object):
             scores, boxes = self.rcnn_net.detect(im, obj_proposals)
             print "Produce %d boxes"%len(scores)
             results = self.reducer.multi_class_reduce(boxes[:,4:], scores[:,1:])
-        self.carrier.post_result(results[0],results[1],results[2])
+            self.carrier.post_result(results[0],results[1],results[2])
 
+    @staticmethod
     def _front_end(self):
-        if not self.carrier.done():
+        while not self.carrier.done():
             image_name = self.carrier.get_image()
             try:
                 assert os.stat(image_name).st_size < 300 * 1024
@@ -96,12 +113,11 @@ class pipe_detector(object):
             obj_proposals = self.proposer.get_proposals(image_name, dtype = 'uint16')
             print "Find %d proposals"%len(obj_proposals)
             self.queue.put((im, obj_proposals))
-        else:
-            self.queue.put(('Finish',[]))
+
+        self.queue.put(('Finish',[]))
 
 
 
-        
 
 def http():
     #==========test http detector============

@@ -6,7 +6,7 @@ class proposer(object):
         self.max_num_proposals = max_num_proposals
 
     def get_proposals(self, image_fname, dtype = 'float32'):
-        string = subprocess.Popen(["./myedgeboxes", image_fname, str(self.max_num_proposals)],stdout = subprocess.PIPE).communicate()[0]
+        string = subprocess.Popen(["./myedgeboxes", image_fname, 'models/forest/modelBsds.dat'],stdout = subprocess.PIPE).communicate()[0]
         if string.strip() == '':
             return []
         bboxes = np.array(map(lambda x: int(x), string.split()), dtype = dtype)

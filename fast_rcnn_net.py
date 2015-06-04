@@ -15,7 +15,7 @@ class fast_rcnn_net(object):
         if im == [] or len(obj_proposals) == 0:
             return ([], [])
         return fast_rcnn.test.im_detect(self.net, im, obj_proposals)
-        
+
 def test():
     model_name = 'fast-rcnn-model/ilsvrc_fast_rcnn_ft_iter_40000.caffemodel'
     prototxt_name = 'fast-rcnn-model/fast_rcnn_test_new.prototxt'

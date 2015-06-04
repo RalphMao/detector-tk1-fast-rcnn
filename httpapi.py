@@ -12,7 +12,6 @@ class carrier(object):
         self.total_num = int(self.total_num)
 
     def get_image(self):
-        print " Current idx:", self.get_idx
         if self.done():
             return None
         status = 0
@@ -23,12 +22,12 @@ class carrier(object):
             print "Exception:", e
             res = ''
         self.get_idx += 1
+        print "Image download. Current idx:", self.get_idx
         return res
 
     def post_result(self,class_ids, confidences, bboxs):
-        if self.catch():
-            return 0
         if len(class_ids) != len(confidences) and len(class_ids) != len(bboxs):
+            print "Index does not match!"
             return 0
 
         num_bboxs = len(class_ids)
@@ -51,6 +50,7 @@ class carrier(object):
             print "Exception:", e
             print "Fail to post the result %d "%(self.get_idx + 1)
         self.post_idx += 1
+        print "Result uploaded. Current idx:", self.post_idx
         return 1
 
     def done(self):
