@@ -12,17 +12,18 @@ class carrier(object):
         self.total_num = int(self.total_num)
 
     def get_image(self):
-        print "Done:", self.done(), " Current idx:", self.get_idx
+        print " Current idx:", self.get_idx
         if self.done():
             return None
         status = 0
         try:
             status = client.get_image(self.token, self.get_idx + 1, 'images')
+            res = 'images/%d.jpg'%(self.get_idx + 1)
         except Exception as e:
             print "Exception:", e
-            print "Try to fetch the image %d again"%(self.get_idx + 1)
+            res = ''
         self.get_idx += 1
-        return 'images/%d.jpg'%self.get_idx
+        return res
 
     def post_result(self,class_ids, confidences, bboxs):
         if self.catch():
@@ -48,7 +49,7 @@ class carrier(object):
             status = client.post_result(self.token, data_to_post)
         except Exception as e:
             print "Exception:", e
-            print "Try to post the result %d again"%(self.get_idx + 1)
+            print "Fail to post the result %d "%(self.get_idx + 1)
         self.post_idx += 1
         return 1
 
