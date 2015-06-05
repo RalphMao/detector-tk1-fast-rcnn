@@ -101,13 +101,24 @@ columns = defaultdict(list)
 lines=""
 
 #+++++++++++++++++++++++++++ Global Variables ++++++++++++++++++++++++++++++++++++++++++++++++++++
+'''
 host_ipaddress = '166.111.65.148'
 host_port = '5000'
 password = 'nics.info'
 score = 100
 username = 'nicsefc'
 temp_directory = '.temp'
+'''
 
+#===========================For ttq=================================
+host_ipaddress = '128.46.75.108'
+host_port = '80'
+#------------------------------------------------------------------
+
+score = 100
+username = 'lpirc'
+password = 'pass'
+temp_directory = '.temp'
 
 
 #++++++++++++++++++++++++++++ get_token: Can be used by the participant directly ++++++++++++++++++++

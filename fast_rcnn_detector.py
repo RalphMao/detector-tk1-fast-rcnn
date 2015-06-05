@@ -62,12 +62,12 @@ class pipe_detector(object):
         front_process = Process(target=self._front_end, args=(self,))
         front_process.start()
         print "Front process started"
-        im, obj_proposals = self.queue.get()
+        image_id, im, obj_proposals = self.queue.get()
         start_time = time.time()
         num = 0
         while im != 'Finished':
-            self._back_end(im, obj_proposals)
-            im, obj_proposals = self.queue.get()
+            self._back_end(image_id, im, obj_proposals)
+            image_id, im, obj_proposals = self.queue.get()
             num += 1
             print "Average speed: %f seconds per image"%((time.time() - start_time) / num)
         print "All images finished"
@@ -87,19 +87,19 @@ class pipe_detector(object):
         #     print "Average speed: %f seconds per image"%((time.time() - start_time) / num)
         # print "All images finished"
 
-    def _back_end(self, im, obj_proposals):
+    def _back_end(self,image_id, im, obj_proposals):
         if im == [] or obj_proposals == []:
             results = ([], [], [])
         else:
             scores, boxes = self.rcnn_net.detect(im, obj_proposals)
             print "Produce %d boxes"%len(scores)
             results = self.reducer.multi_class_reduce(boxes[:,4:], scores[:,1:])
-            self.carrier.post_result(results[0],results[1],results[2])
+        self.carrier.post_result(image_id, results[0],results[1],results[2])
 
     @staticmethod
     def _front_end(self):
         while not self.carrier.done():
-            image_name = self.carrier.get_image()
+            image_id, image_name = self.carrier.get_image()
             try:
                 assert os.stat(image_name).st_size < 300 * 1024
                 im = cv2.imread(image_name)
@@ -108,41 +108,21 @@ class pipe_detector(object):
                 assert im.shape[2] < 800
             except Exception as e:
                 print "Exception:", e
-                self.queue.put(([],[]))
+                continue
 
             obj_proposals = self.proposer.get_proposals(image_name, dtype = 'uint16')
             print "Find %d proposals"%len(obj_proposals)
-            self.queue.put((im, obj_proposals))
+            if len(obj_proposals) > 0:
+                self.queue.put((image_id, im, obj_proposals))
 
-        self.queue.put(('Finish',[]))
-
-
-
+        self.queue.put((0, 'Finish',[]))
 
 def http():
-    #==========test http detector============
-    usrname = 'nicsefc'
-    passwd = 'nics.info'
+    #==========test http detector for ttq============
+    usrname = 'lpirc'
+    passwd = 'pass'
     detector = pipe_detector(prototxt_name, model_name, batch_size = 10, usrname = usrname, passwd = passwd)
     detector.run()
-def test():
-    #===========test mAP===================
-    detector = rcnn_detector(prototxt_name, model_name, batch_size = 64)
-    lines = open('/home/maohz12/DATA/ILSVRC2013_devkit/data/det_lists/val.txt').readlines()
-    fout = open('bboxs_results.txt','wb')
-    num = 0
-    start_time = time.time()
-    for line in lines:
-        sys.stdout.flush()
-        image_name = '/home/maohz12/DATA/ILSVRC2013_DET_val/' + line.split()[0] + '.JPEG'
-        image_id = int(line.split()[1])
-        class_ids, confidences, bboxs = detector.detect(image_name)
-        for i in range(len(class_ids)):
-            fout.write('%d %d %f %f %f %f %f\n'%(image_id, class_ids[i], confidences[i], bboxs[i][0], bboxs[i][1], bboxs[i][2], bboxs[i][3]))
-        num += 1
-        print "Image id%d"%num
-    print "Average time cost:%f seconds"%((time.time()-start_time)/num)
-
 
 if __name__ == "__main__":
     model_name = 'fast-rcnn-model/ilsvrc_fast_rcnn_EB_pp_pp_v2_iter_20000.caffemodel'

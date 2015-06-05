@@ -23,19 +23,18 @@ class carrier(object):
             res = ''
         self.get_idx += 1
         print "Image download. Current idx:", self.get_idx
-        return res
+        return (self.get_idx, res)
 
-    def post_result(self,class_ids, confidences, bboxs):
+    def post_result(self,image_id, class_ids, confidences, bboxs):
         if len(class_ids) != len(confidences) and len(class_ids) != len(bboxs):
             print "Index does not match!"
             return 0
 
         num_bboxs = len(class_ids)
         if num_bboxs == 0:
-            self.post_idx += 1
             return 1
 
-        data_to_post = {'image_name':[str(self.post_idx+1)] * num_bboxs,
+        data_to_post = {'image_name':[str(image_id)] * num_bboxs,
         'confidence': map(lambda x:str(x), confidences),
         'CLASS_ID': map(lambda x: str(x), class_ids),
         'xmin': map(lambda x: str(x[0]), bboxs),
@@ -48,9 +47,8 @@ class carrier(object):
             status = client.post_result(self.token, data_to_post)
         except Exception as e:
             print "Exception:", e
-            print "Fail to post the result %d "%(self.get_idx + 1)
         self.post_idx += 1
-        print "Result uploaded. Current idx:", self.post_idx
+        print "Result uploaded. Current idx:", image_id
         return 1
 
     def done(self):

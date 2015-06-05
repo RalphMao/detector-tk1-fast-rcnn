@@ -1,5 +1,7 @@
 import subprocess
+import time
 import numpy as np
+import PIL.Image as Image
 
 class proposer(object):
     def __init__(self,max_num_proposals):
@@ -18,4 +20,13 @@ if __name__ == "__main__":
     import os
     import sys
     pp = proposer(200)
-    print pp.get_proposals(sys.argv[1])
+    Size = [300,400, 600, 800]
+    for i_size in Size:
+        image = Image.open(sys.argv[1])
+        image_t = image.resize((i_size, i_size))
+        image_t.save('images/image%d.jpg'%i_size)
+        start_time = time.time()
+        for x in range(10):
+            pp.get_proposals('images/image%d.jpg'%i_size)
+        print "Num %d, Time %f"%(i_size, time.time()-start_time) 
+
