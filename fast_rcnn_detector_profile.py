@@ -40,22 +40,24 @@ class http_rcnn_detector(fast_rcnn_detector):
     def run(self):
         global down_time
         global post_time
-        while not self.carrier.done():
+        max_num = 200
+        while not self.carrier.done() and max_num > 0:
             start_time = time.time()
-            image_name = self.carrier.get_image()
+            image_name = self.carrier.get_image()[1]
             down_time += time.time() - start_time
             results = self.detect(image_name)
             start_time = time.time()
-            self.carrier.post_result(results[0],results[1],results[2])
+            self.carrier.post_result(0,results[0],results[1],results[2])
             post_time += time.time() - start_time
             print "One another image finished!"
+            max_num -=1
         print "All images finished!"
 
-def http():
+def http(num_proposals):
     #==========test http detector============
     usrname = 'nicsefc'
     passwd = 'nics.info'
-    detector = http_rcnn_detector(prototxt_name, model_name, batch_size = 10, usrname = usrname, passwd = passwd)
+    detector = http_rcnn_detector(prototxt_name, model_name, batch_size = 10, usrname = usrname, passwd = passwd, max_num_proposals=num_proposals)
     detector.run()
 def test():
     #===========test mAP===================
@@ -76,12 +78,21 @@ def test():
         print "Image id%d"%num
     print "Average time cost:%f seconds"%((time.time()-start_time)/num)
 
+    
+def multi_profile():
+    num_list = [20,50,100,150,200,400,700,1000]
+    fout = open('frtime_num.log','w')
+    global proposal_time
+    global cnn_time
+    global nms_time
+    global down_time
+    global post_time
+    for num in num_list:
+        single_profile(num)
+        fout.write('%d, %f\n'%(num, cnn_time))
 
-if __name__ == "__main__":
-    model_name = '/home/maohz12/rcnn-python/fast-rcnn-model/ilsvrc_fast_rcnn_ft_iter_40000.caffemodel'  
-    prototxt_name = '/home/maohz12/rcnn-python/fast-rcnn-model/fast_rcnn_test_new.prototxt'
-    import time
-
+    fout.close()
+def single_profile(num_proposals):
     global proposal_time
     global cnn_time
     global nms_time
@@ -92,9 +103,16 @@ if __name__ == "__main__":
     proposal_time = 0.0
     cnn_time = 0.0
     nms_time = 0.0
-    http()
+    http(num_proposals)
     print proposal_time
     print cnn_time
     print nms_time
     print down_time
     print post_time
+
+if __name__ == "__main__":
+    model_name = 'fast-rcnn-model/fast-rcnn-EB-274'
+    prototxt_name = 'fast-rcnn-model/test.prototxt'
+    import time
+
+    multi_profile()

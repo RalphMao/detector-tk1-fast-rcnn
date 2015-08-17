@@ -7,6 +7,7 @@ namespace bp = boost::python;
 bp::object feed_out(bp::object input)
 {
     PyArrayObject* array= reinterpret_cast<PyArrayObject *>(input.ptr());
+
     bp::object* return_array = reinterpret_cast<bp::object *>(array);
     return *return_array;
 }

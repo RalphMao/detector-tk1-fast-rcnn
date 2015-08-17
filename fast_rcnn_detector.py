@@ -23,8 +23,8 @@ class fast_rcnn_detector(object):
             assert os.stat(image_in).st_size < 300 * 1024
             im = cv2.imread(image_in)
             assert len(im.shape) == 3
-            assert im.shape[1] < 800
-            assert im.shape[2] < 800
+            assert im.shape[1] < 1000
+            assert im.shape[2] < 1000
         except Exception as e:
             print "Exception:", e
             return ([],[],[])
@@ -119,13 +119,13 @@ class pipe_detector(object):
 
 def http():
     #==========test http detector for ttq============
-    usrname = 'lpirc'
-    passwd = 'pass'
+    usrname = 'nicsefc'
+    passwd = 'nics.info'
     detector = pipe_detector(prototxt_name, model_name, batch_size = 10, usrname = usrname, passwd = passwd)
     detector.run()
 
 if __name__ == "__main__":
-    model_name = 'fast-rcnn-model/ilsvrc_fast_rcnn_EB_pp_pp_v2_iter_20000.caffemodel'
+    model_name = 'fast-rcnn-model/fast-rcnn-EB-274'
     prototxt_name = 'fast-rcnn-model/test.prototxt'
     '''
     model_name = 'fast-rcnn-model/ilsvrc_fast_rcnn_ft_iter_40000.caffemodel'
