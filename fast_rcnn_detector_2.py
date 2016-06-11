@@ -42,14 +42,10 @@ class http_rcnn_detector(fast_rcnn_detector):
         fast_rcnn_detector.__init__(self,prototxt_name, model_name, batch_size, max_num_proposals, output_dim, iou_thres)
         self.carrier = httpapi.carrier(usrname, passwd)
     def run(self):
-        start_time = time.time()
-        num = 0
         while not self.carrier.done():
-            image_id, image_name = self.carrier.get_image()
+            image_name = self.carrier.get_image()
             results = self.detect(image_name)
-            self.carrier.post_result(image_id , results[0],results[1],results[2])
-            num += 1
-            print "Time cost:%f"%((time.time() - start_time) / num)
+            self.carrier.post_result(results[0],results[1],results[2])
         print "All images finished!"
 
 class pipe_detector(object):
@@ -63,8 +59,11 @@ class pipe_detector(object):
         # self._front_end() # Perform first preprocessing for pipeline
 
     def run(self):
-        front_process = Process(target=self._front_end, args=(self,))
+        front_process = Process(target=self._front_end, args=(self,0))
         front_process.start()
+        front_process2 = Process(target=self._front_end, args=(self,100))
+        front_process2.start()
+
         print "Front process started"
         image_id, im, obj_proposals = self.queue.get()
         start_time = time.time()
@@ -101,9 +100,11 @@ class pipe_detector(object):
         self.carrier.post_result(image_id, results[0],results[1],results[2])
 
     @staticmethod
-    def _front_end(self):
+    def _front_end(self,start):
+        self.carrier.get_idx = start
         while not self.carrier.done():
             image_id, image_name = self.carrier.get_image()
+            print image_name
             try:
                 assert os.stat(image_name).st_size < 300 * 1024
                 im = cv2.imread(image_name)
@@ -125,7 +126,6 @@ def http():
     #==========test http detector for ttq============
     usrname = 'nicsefc'
     passwd = 'nics.info'
-    # detector = http_rcnn_detector(prototxt_name, model_name, batch_size = 10, usrname = usrname, passwd = passwd)
     detector = pipe_detector(prototxt_name, model_name, batch_size = 10, usrname = usrname, passwd = passwd)
     detector.run()
 
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         rcnn = fast_rcnn_detector(prototxt_name, model_name)
         image_in = sys.argv[1]
         results = rcnn.detect(image_in)
-        fout = open(sys.argv[2],'w')
+        fout = open('res.txt','w')
         for i in range(len(results[0])):
             fout.write('%d %d %f %f %f %f %f\n'%(1, results[0][i], results[1][i], results[2][i][0], results[2][i][1], results[2][i][2], results[2][i][3]))
         fout.close()

@@ -6,10 +6,11 @@ import caffe
 import fast_rcnn.test
 import numpy as np
 class fast_rcnn_net(object):
-    def __init__(self, prototxt_name, model_name, batch_size = 10, device_id = 0):
+    def __init__(self, prototxt_name, model_name, batch_size = 10, device_id = 0, scale=600):
         caffe.set_mode_gpu()
         caffe.set_device(device_id)
         self.net = caffe.Net(prototxt_name, model_name, caffe.TEST)
+        # fast_rcnn.test.cfg.TEST.SCALES=(scale,)
 
     def detect(self, im, obj_proposals):
         if im == [] or len(obj_proposals) == 0:

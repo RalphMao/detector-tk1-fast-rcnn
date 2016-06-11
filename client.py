@@ -101,8 +101,10 @@ columns = defaultdict(list)
 lines=""
 
 #+++++++++++++++++++++++++++ Global Variables ++++++++++++++++++++++++++++++++++++++++++++++++++++
-host_ipaddress = '166.111.65.148'
-host_port = '5000'
+
+host_ipaddress = '166.111.64.236'
+#host_ipaddress = '166.111.65.146'
+host_port = '5001'
 password = 'SZKEKG3H'
 score = 100
 username = 'user6'
