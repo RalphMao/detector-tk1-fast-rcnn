@@ -18,7 +18,7 @@ class fast_rcnn_net(object):
         return fast_rcnn.test.im_detect(self.net, im, obj_proposals)
 
 def test():
-    model_name = 'fast-rcnn-model/ilsvrc_fast_rcnn_ft_iter_40000.caffemodel'
+    model_name = 'fast-rcnn-model/fast-rcnn-EB-274'
     prototxt_name = 'fast-rcnn-model/fast_rcnn_test_new.prototxt'
     net = fast_rcnn_net(prototxt_name, model_name)
     print "Success"
