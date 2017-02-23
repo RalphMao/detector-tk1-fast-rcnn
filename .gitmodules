@@ -1,0 +1,3 @@
+[submodule "fast-rcnn"]
+	path = fast-rcnn
+	url = https://github.com/rbgirshick/fast-rcnn.git
